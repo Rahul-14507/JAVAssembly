@@ -18,6 +18,22 @@
   --editor-gutter: #F5F5F0;
 }
 
+.dark {
+  --background: #111312;
+  --surface: #171A18;
+  --surface-muted: #202422;
+  --border: #2B302D;
+  --text-primary: #EDEDEA;
+  --text-secondary: #90968D;
+  --accent: #48825F;
+  --accent-hover: #5AA176;
+  --success: #3EB370;
+  --error: #E5534B;
+  --warning: #D9822B;
+  --editor-background: #151816;
+  --editor-gutter: #111312;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -31,6 +47,7 @@ body {
   margin: 0;
   padding: 0;
   user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 /* Custom subtle scrollbars */
@@ -42,11 +59,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #DCDDD5;
+  background: var(--border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B5B6AE;
+  background: var(--text-secondary);
 }
 
 /* Ensure focus rings are clean and accessible */
@@ -54,4 +71,3 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-

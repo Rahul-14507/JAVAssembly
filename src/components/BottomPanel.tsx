@@ -87,23 +87,24 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
   return (
     <div
       style={{ height: `${panelHeight}px` }}
-      className="w-full flex flex-col bg-surface border-t border-border shrink-0 select-none relative"
+      className="w-full flex flex-col bg-surface border-t border-border shrink-0 select-none relative transition-colors duration-150"
     >
       {/* Resizer Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className="w-full h-1.5 absolute top-0 left-0 -mt-1 cursor-row-resize z-30 group flex items-center justify-center"
+        className="w-full h-2 absolute -top-1 left-0 cursor-row-resize z-30 group flex items-center justify-center"
+        title="Drag to resize bottom panel"
       >
-        <div className="w-12 h-1 rounded-full bg-border group-hover:bg-accent transition-colors" />
+        <div className="w-10 h-1 rounded-full bg-border group-hover:bg-accent group-hover:scale-y-125 transition-all" />
       </div>
 
       {/* Panel Tab Header */}
-      <div className="h-9 border-b border-border px-3 flex items-center justify-between bg-surface-muted/30 shrink-0">
-        <div className="flex items-center gap-1">
+      <div className="h-9 border-b border-border px-3 flex items-center justify-between bg-surface-muted/40 shrink-0">
+        <div className="flex items-center gap-1.5">
           {/* Output Tab */}
           <button
             onClick={() => setActiveTab("output")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
               activeTab === "output"
                 ? "bg-surface text-text-primary shadow-xs border border-border"
                 : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
@@ -123,7 +124,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           {/* Input Tab */}
           <button
             onClick={() => setActiveTab("input")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
               activeTab === "input"
                 ? "bg-surface text-text-primary shadow-xs border border-border"
                 : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
@@ -139,7 +140,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           {/* Diagnostics Tab */}
           <button
             onClick={() => setActiveTab("diagnostics")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
               activeTab === "diagnostics"
                 ? "bg-surface text-text-primary shadow-xs border border-border"
                 : "text-text-secondary hover:text-text-primary hover:bg-surface/50"

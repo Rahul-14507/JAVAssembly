@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useImperativeHandle, forwardRef } from "react";
+import React, { useRef, useImperativeHandle, forwardRef, useEffect } from "react";
 import Editor, { OnMount } from "@monaco-editor/react";
 
 export interface CodeEditorHandle {
@@ -10,6 +10,7 @@ export interface CodeEditorHandle {
 
 interface CodeEditorProps {
   value: string;
+  theme?: "light" | "dark";
   onChange: (value: string) => void;
   onRun: () => void;
   onSave?: () => void;
@@ -17,16 +18,23 @@ interface CodeEditorProps {
 }
 
 export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
-  ({ value, onChange, onRun, onSave, onCursorChange }, ref) => {
+  ({ value, theme = "light", onChange, onRun, onSave, onCursorChange }, ref) => {
     const editorRef = useRef<any>(null);
     const monacoRef = useRef<any>(null);
 
     // Sync value if changed programmatically
-    React.useEffect(() => {
+    useEffect(() => {
       if (editorRef.current && editorRef.current.getValue() !== value) {
         editorRef.current.setValue(value);
       }
     }, [value]);
+
+    // Sync theme with Monaco
+    useEffect(() => {
+      if (monacoRef.current) {
+        monacoRef.current.editor.setTheme(theme === "dark" ? "javabox-dark" : "javabox-light");
+      }
+    }, [theme]);
 
     useImperativeHandle(ref, () => ({
       revealLocation: (line: number, column: number = 1) => {
@@ -45,7 +53,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
       editorRef.current = editor;
       monacoRef.current = monaco;
 
-      // Define custom warm light theme matching design system
+      // Define custom warm light theme
       monaco.editor.defineTheme("javabox-light", {
         base: "vs",
         inherit: true,
@@ -70,7 +78,32 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
         },
       });
 
-      monaco.editor.setTheme("javabox-light");
+      // Define custom technical dark theme
+      monaco.editor.defineTheme("javabox-dark", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [
+          { token: "comment", foreground: "666C64", fontStyle: "italic" },
+          { token: "keyword", foreground: "52A374", fontStyle: "bold" },
+          { token: "string", foreground: "82C78A" },
+          { token: "number", foreground: "E6A15C" },
+          { token: "type", foreground: "8BB8FF", fontStyle: "bold" },
+          { token: "delimiter", foreground: "8E948B" },
+        ],
+        colors: {
+          "editor.background": "#151816",
+          "editor.foreground": "#EDEDEA",
+          "editorLineNumber.foreground": "#3E4440",
+          "editorLineNumber.activeForeground": "#EDEDEA",
+          "editorGutter.background": "#111312",
+          "editor.lineHighlightBackground": "#1B1F1C",
+          "editorCursor.foreground": "#52A374",
+          "editor.selectionBackground": "#2A3830",
+          "editor.inactiveSelectionBackground": "#1E2722",
+        },
+      });
+
+      monaco.editor.setTheme(theme === "dark" ? "javabox-dark" : "javabox-light");
 
       // Register Ctrl+Enter / Cmd+Enter for Run
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
@@ -89,7 +122,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
     };
 
     return (
-      <div className="w-full h-full relative overflow-hidden bg-editor-bg border-b border-border">
+      <div className="w-full h-full relative overflow-hidden bg-editor-bg border-b border-border transition-colors duration-150">
         <Editor
           height="100%"
           language="java"

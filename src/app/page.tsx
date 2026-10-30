@@ -35,11 +35,13 @@ const DEFAULT_STDIN = `10 20`;
 
 const STORAGE_KEY_CODE = "javabox_source_v1";
 const STORAGE_KEY_STDIN = "javabox_stdin_v1";
+const STORAGE_KEY_THEME = "javassembly_theme";
 
 export default function PlaygroundPage() {
   const [code, setCode] = useState<string>(DEFAULT_JAVA_CODE);
   const [stdin, setStdin] = useState<string>(DEFAULT_STDIN);
   const [isModified, setIsModified] = useState<boolean>(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [cursorPos, setCursorPos] = useState<{ line: number; column: number }>({
     line: 1,
     column: 1,
@@ -73,6 +75,8 @@ export default function PlaygroundPage() {
     try {
       const savedCode = localStorage.getItem(STORAGE_KEY_CODE);
       const savedStdin = localStorage.getItem(STORAGE_KEY_STDIN);
+      const savedTheme = localStorage.getItem(STORAGE_KEY_THEME) as "light" | "dark" | null;
+
       if (savedCode !== null) {
         setCode(savedCode);
         if (savedCode !== DEFAULT_JAVA_CODE) {
@@ -82,9 +86,32 @@ export default function PlaygroundPage() {
       if (savedStdin !== null) {
         setStdin(savedStdin);
       }
+      if (savedTheme === "light" || savedTheme === "dark") {
+        setTheme(savedTheme);
+        document.documentElement.classList.toggle("dark", savedTheme === "dark");
+      } else {
+        // Default to dark mode for sleek developer experience
+        setTheme("dark");
+        document.documentElement.classList.add("dark");
+      }
     } catch {
       // LocalStorage unavailable/disabled
     }
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.toggle("dark", next === "dark");
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY_THEME, next);
+      } catch {
+        // storage error
+      }
+      return next;
+    });
   }, []);
 
   // Save changes locally
@@ -178,6 +205,8 @@ export default function PlaygroundPage() {
         isModified={isModified}
         runtimeStatus={runtimeStatus}
         isRunning={isRunning}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onRun={handleRun}
         onStop={stopCode}
         onReset={handleReset}
@@ -189,6 +218,7 @@ export default function PlaygroundPage() {
           <CodeEditor
             ref={editorRef}
             value={code}
+            theme={theme}
             onChange={handleCodeChange}
             onRun={handleRun}
             onSave={() => saveLocally(code, stdin)}

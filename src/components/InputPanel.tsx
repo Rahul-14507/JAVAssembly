@@ -9,17 +9,23 @@ interface InputPanelProps {
 }
 
 export const InputPanel: React.FC<InputPanelProps> = ({ value, onChange, disabled }) => {
+  const lineCount = value.split("\n").length;
+  const charCount = value.length;
+
   return (
-    <div className="w-full h-full flex flex-col bg-surface p-3 select-text">
+    <div className="w-full h-full flex flex-col bg-surface p-3 select-text transition-colors duration-150">
       <div className="flex items-center justify-between mb-2">
         <label
           htmlFor="stdin-input"
-          className="text-xs font-medium text-text-secondary font-mono tracking-tight"
+          className="text-xs font-medium text-text-secondary font-mono tracking-tight flex items-center gap-2"
         >
-          Standard Input (stdin)
+          <span>Standard Input (stdin)</span>
+          <span className="text-[10px] text-text-secondary/60 font-sans font-normal">
+            — Passed to System.in during execution
+          </span>
         </label>
-        <span className="text-[11px] text-text-secondary/70">
-          Passed to System.in when program executes
+        <span className="text-[10px] font-mono text-text-secondary/60">
+          {lineCount} {lineCount === 1 ? "line" : "lines"} • {charCount} chars
         </span>
       </div>
       <textarea
@@ -27,11 +33,10 @@ export const InputPanel: React.FC<InputPanelProps> = ({ value, onChange, disable
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        placeholder="Enter input for your Java program..."
-        className="flex-1 w-full p-2.5 rounded bg-background/50 border border-border text-xs font-mono text-text-primary resize-none focus:outline-none focus:border-accent focus:bg-surface transition-colors"
+        placeholder="Enter input for your Java program (e.g. numbers, strings, or multi-line data)..."
+        className="flex-1 w-full p-3 rounded-md bg-background/60 border border-border text-xs font-mono text-text-primary resize-none focus:outline-none focus:border-accent focus:bg-surface transition-colors leading-relaxed"
         spellCheck={false}
       />
     </div>
   );
 };
-
