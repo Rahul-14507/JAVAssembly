@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #F5F5F0;
+  --surface: #FFFFFF;
+  --surface-muted: #ECEDE7;
+  --border: #DCDDD5;
+  --text-primary: #242821;
+  --text-secondary: #70756B;
+  --accent: #3F6B50;
+  --accent-hover: #31563F;
+  --success: #287A4B;
+  --error: #C23B36;
+  --warning: #A96B19;
+  --editor-background: #FFFFFF;
+  --editor-gutter: #F5F5F0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #DCDDD5;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B5B6AE;
+}
+
+/* Ensure focus rings are clean and accessible */
+button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
