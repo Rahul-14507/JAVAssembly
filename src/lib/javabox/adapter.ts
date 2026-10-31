@@ -234,11 +234,27 @@ export class JavaBoxAdapter {
       return;
     }
 
+    // Format common runtime exceptions cleanly for the user
+    let userFacingText = text;
+    if (text.includes("java.lang.ArithmeticException: / by zero")) {
+      userFacingText = "Runtime Error: ArithmeticException - Division by zero";
+    } else if (text.includes("java.lang.ArrayIndexOutOfBoundsException")) {
+      userFacingText = text.replace("java.lang.", "Runtime Error: ");
+    } else if (text.includes("java.lang.NullPointerException")) {
+      userFacingText = "Runtime Error: NullPointerException - Attempted to access an object reference that is null";
+    } else if (text.includes("java.util.NoSuchElementException")) {
+      userFacingText = "Runtime Error: NoSuchElementException - No more input available (check your Standard Input tab)";
+    } else if (text.includes("java.lang.StackOverflowError")) {
+      userFacingText = "Runtime Error: StackOverflowError - Deep recursion or infinite loop detected";
+    } else if (text.includes("java.lang.OutOfMemoryError")) {
+      userFacingText = "Runtime Error: OutOfMemoryError - Java heap space exceeded";
+    }
+
     if (this.totalOutputBytes < this.maxOutputBytes) {
-      this.currentStderr.push(text);
-      this.totalOutputBytes += text.length;
+      this.currentStderr.push(userFacingText);
+      this.totalOutputBytes += userFacingText.length;
       if (this.onStderrChunk) {
-        this.onStderrChunk(text + "\n");
+        this.onStderrChunk(userFacingText + "\n");
       }
     }
   }
@@ -376,17 +392,19 @@ export class JavaBoxAdapter {
         const rawStderr = this.currentStderr.join("\n");
 
         if (timedOut) {
+          const timeoutSec = Math.round(timeoutMs / 1000);
           this.currentStderr.push(
-            `\n[Execution timed out after ${timeoutMs / 1000} seconds]`,
+            `\nExecution timed out (limit: ${timeoutSec}s). Likely caused by an infinite loop (e.g. while(true)), unresolved recursion, or waiting for standard input.`,
           );
         }
 
         const combinedOutput = rawStdout + "\n" + rawStderr;
         const diagnostics = this.parseDiagnostics(combinedOutput);
 
-        // Check if CompileServer is still healthy or if System.in was closed
+        // Check if CompileServer is still healthy or if System.in was closed by sc.close()
         this.checkLiveness(600).then((isAlive) => {
-          if (!isAlive) {
+          if (!isAlive || timedOut) {
+            // If timed out or daemon closed, reset module so the next run spins up a clean, responsive JVM
             this.module = null;
             this.setStatus("idle");
           } else {
