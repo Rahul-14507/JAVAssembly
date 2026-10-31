@@ -15,6 +15,20 @@ const nextConfig = {
         },
       ],
     },
+    {
+      // Force immutable caching for JavaBox runtime assets so browsers never revalidate over network
+      source: '/javabox/:all*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+        {
+          key: 'Cross-Origin-Resource-Policy',
+          value: 'cross-origin',
+        },
+      ],
+    },
   ],
 };
 

@@ -1,4 +1,5 @@
 import { Diagnostic, ExecutionResult, RuntimeStatus, ProgressCallback } from "./types";
+import { fetchWithIndexedDBCache } from "./idbCache";
 
 declare global {
   interface Window {
@@ -67,11 +68,26 @@ export class JavaBoxAdapter {
 
     try {
       this.setStatus("downloading", "Preparing WebAssembly runtime...");
-      onProgress?.(10, "Fetching JavaBox WebAssembly binary...");
+      onProgress?.(10, "Loading runtime assets from cache...");
 
-      // 1. Fetch & stream compile WASM module
-      const wasmFetch = fetch("/javabox/javabox-direct.wasm");
-      const wasmPromise = WebAssembly.compileStreaming(wasmFetch);
+      // 1. Fetch WASM and Data with persistent IndexedDB caching
+      // On first visit: downloads over network and stores in IndexedDB
+      // On reload/revisit: returns instantly from IndexedDB (0 network traffic)
+      const wasmBufferPromise = fetchWithIndexedDBCache(
+        "/javabox/javabox-direct.wasm",
+        "javabox-direct-wasm-v1"
+      );
+
+      const dataBufferPromise = fetchWithIndexedDBCache(
+        "/javabox/javabox-direct.data",
+        "javabox-direct-data-v1",
+        (loaded, total) => {
+          if (total > 0) {
+            const pct = Math.round((loaded / total) * 30);
+            onProgress?.(10 + pct, `Loading OpenJDK runtime (${Math.round((loaded / (1024 * 1024)) * 10) / 10} MB)...`);
+          }
+        }
+      );
 
       onProgress?.(30, "Importing JavaBox module...");
       // Use dynamic import function so TypeScript and bundlers do not attempt static module resolution
@@ -79,14 +95,22 @@ export class JavaBoxAdapter {
       const moduleNamespace = await dynamicImport("/javabox/javabox-direct.mjs");
       const createModule = moduleNamespace.default;
 
-      onProgress?.(50, "Compiling WebAssembly binary...");
-      const compiledWasm = await wasmPromise;
+      onProgress?.(45, "Compiling WebAssembly binary...");
+      const wasmBuffer = await wasmBufferPromise;
+      const compiledWasm = await WebAssembly.compile(wasmBuffer);
+
+      onProgress?.(60, "Mounting OpenJDK filesystem...");
+      const preloadedDataBuffer = await dataBufferPromise;
 
       this.setStatus("initializing", "Booting OpenJDK 21 JVM...");
       onProgress?.(70, "Starting OpenJDK Zero JVM...");
 
       const directModuleConfig: any = {
         locateFile: (path: string) => `/javabox/${path}`,
+        getPreloadedPackage: (remotePackageName: string, remotePackageSize: number) => {
+          // Provide data buffer directly from IndexedDB without network fetch
+          return preloadedDataBuffer;
+        },
         instantiateWasm: (imports: any, callback: any) => {
           WebAssembly.instantiate(compiledWasm, imports).then((instance) => {
             callback(instance, compiledWasm);
