@@ -1,4 +1,9 @@
-import { Diagnostic, ExecutionResult, RuntimeStatus, ProgressCallback } from "./types";
+import {
+  Diagnostic,
+  ExecutionResult,
+  RuntimeStatus,
+  ProgressCallback,
+} from "./types";
 import { fetchWithIndexedDBCache } from "./idbCache";
 
 declare global {
@@ -11,7 +16,9 @@ declare global {
 export class JavaBoxAdapter {
   private static instance: JavaBoxAdapter | null = null;
   private status: RuntimeStatus = "idle";
-  private statusListeners: Set<(status: RuntimeStatus, message?: string) => void> = new Set();
+  private statusListeners: Set<
+    (status: RuntimeStatus, message?: string) => void
+  > = new Set();
   private module: any = null;
   private currentStdout: string[] = [];
   private currentStderr: string[] = [];
@@ -37,7 +44,9 @@ export class JavaBoxAdapter {
     return this.status;
   }
 
-  public subscribeStatus(cb: (status: RuntimeStatus, message?: string) => void): () => void {
+  public subscribeStatus(
+    cb: (status: RuntimeStatus, message?: string) => void,
+  ): () => void {
     this.statusListeners.add(cb);
     cb(this.status);
     return () => this.statusListeners.delete(cb);
@@ -61,7 +70,8 @@ export class JavaBoxAdapter {
     }
 
     if (!window.crossOriginIsolated) {
-      const err = "Cross-Origin Isolation is required (SharedArrayBuffer). COOP and COEP headers must be set.";
+      const err =
+        "Cross-Origin Isolation is required (SharedArrayBuffer). COOP and COEP headers must be set.";
       this.setStatus("error", err);
       throw new Error(err);
     }
@@ -75,7 +85,7 @@ export class JavaBoxAdapter {
       // On reload/revisit: returns instantly from IndexedDB (0 network traffic)
       const wasmBufferPromise = fetchWithIndexedDBCache(
         "/javabox/javabox-direct.wasm",
-        "javabox-direct-wasm-v1"
+        "javabox-direct-wasm-v1",
       );
 
       const dataBufferPromise = fetchWithIndexedDBCache(
@@ -84,15 +94,20 @@ export class JavaBoxAdapter {
         (loaded, total) => {
           if (total > 0) {
             const pct = Math.round((loaded / total) * 30);
-            onProgress?.(10 + pct, `Loading OpenJDK runtime (${Math.round((loaded / (1024 * 1024)) * 10) / 10} MB)...`);
+            onProgress?.(
+              10 + pct,
+              `Loading OpenJDK runtime (${Math.round((loaded / (1024 * 1024)) * 10) / 10} MB)...`,
+            );
           }
-        }
+        },
       );
 
       onProgress?.(30, "Importing JavaBox module...");
       // Use dynamic import function so TypeScript and bundlers do not attempt static module resolution
       const dynamicImport = new Function("url", "return import(url)");
-      const moduleNamespace = await dynamicImport("/javabox/javabox-direct.mjs");
+      const moduleNamespace = await dynamicImport(
+        "/javabox/javabox-direct.mjs",
+      );
       const createModule = moduleNamespace.default;
 
       onProgress?.(45, "Compiling WebAssembly binary...");
@@ -107,7 +122,10 @@ export class JavaBoxAdapter {
 
       const directModuleConfig: any = {
         locateFile: (path: string) => `/javabox/${path}`,
-        getPreloadedPackage: (remotePackageName: string, remotePackageSize: number) => {
+        getPreloadedPackage: (
+          remotePackageName: string,
+          remotePackageSize: number,
+        ) => {
           // Provide data buffer directly from IndexedDB without network fetch
           return preloadedDataBuffer;
         },
@@ -182,7 +200,8 @@ export class JavaBoxAdapter {
         this.onStdoutChunk(text + "\n");
       }
     } else if (this.totalOutputBytes === this.maxOutputBytes) {
-      const limitNotice = "\n[Output truncated: exceeded maximum output limit of 128KB]";
+      const limitNotice =
+        "\n[Output truncated: exceeded maximum output limit of 128KB]";
       this.currentStdout.push(limitNotice);
       this.totalOutputBytes += limitNotice.length + 1;
       if (this.onStdoutChunk) {
@@ -193,14 +212,22 @@ export class JavaBoxAdapter {
 
   private handlePrintErr(text: string) {
     // Filter internal JVM threads / daemon noise
-    if (/^Exception in thread "(Finalizer|Common-Cleaner|DoomLoop|Reference Handler|Logging-Cleaner)"/.test(text)) {
+    if (
+      /^Exception in thread "(Finalizer|Common-Cleaner|DoomLoop|Reference Handler|Logging-Cleaner)"/.test(
+        text,
+      )
+    ) {
       return;
     }
     if (text === "java.lang.NullPointerException") {
       return;
     }
     // Filter daemon teardown stream closed errors when user code closes System.in (sc.close())
-    if (/^Exception in thread "main" java\.io\.IOException: Stream closed/.test(text)) {
+    if (
+      /^Exception in thread "main" java\.io\.IOException: Stream closed/.test(
+        text,
+      )
+    ) {
       return;
     }
     if (/^\s*at (java\.base\/(java\.io|sun\.nio)|CompileServer)/.test(text)) {
@@ -229,7 +256,9 @@ export class JavaBoxAdapter {
         if (Date.now() - startTime > timeoutMs) {
           clearInterval(pingInterval);
           this.onProtocolPrint = undefined;
-          reject(new Error("Timeout waiting for Java CompileServer to warm up"));
+          reject(
+            new Error("Timeout waiting for Java CompileServer to warm up"),
+          );
           return;
         }
         try {
@@ -261,7 +290,8 @@ export class JavaBoxAdapter {
     const diagnostics: Diagnostic[] = [];
     const lines = output.split("\n");
     // Format: [/]FileName.java:Line: (error|warning|note): Message
-    const headerRegex = /^(?:\/)?([a-zA-Z0-9_$]+\.java):(\d+):\s*(error|warning|note):\s*(.+)$/;
+    const headerRegex =
+      /^(?:\/)?([a-zA-Z0-9_$]+\.java):(\d+):\s*(error|warning|note):\s*(.+)$/;
     const pointerRegex = /^(\s*)\^/;
 
     for (let i = 0; i < lines.length; i++) {
@@ -269,7 +299,8 @@ export class JavaBoxAdapter {
       if (match) {
         const file = match[1];
         const line = parseInt(match[2], 10);
-        const severity = match[3] === "note" ? "info" : (match[3] as "error" | "warning");
+        const severity =
+          match[3] === "note" ? "info" : (match[3] as "error" | "warning");
         const message = match[4];
 
         let column: number | undefined;
@@ -302,7 +333,7 @@ export class JavaBoxAdapter {
       timeoutMs?: number;
       onStdoutChunk?: (chunk: string) => void;
       onStderrChunk?: (chunk: string) => void;
-    }
+    },
   ): Promise<ExecutionResult> {
     if (this.isExecutionRunning) {
       throw new Error("An execution is already in progress.");
@@ -322,7 +353,9 @@ export class JavaBoxAdapter {
     this.onStderrChunk = options?.onStderrChunk;
 
     // Detect class name
-    const classMatch = source.match(/public\s+class\s+([A-Za-z0-9_$]+)/) || source.match(/class\s+([A-Za-z0-9_$]+)/);
+    const classMatch =
+      source.match(/public\s+class\s+([A-Za-z0-9_$]+)/) ||
+      source.match(/class\s+([A-Za-z0-9_$]+)/);
     const className = classMatch ? classMatch[1] : "Main";
 
     const startTime = performance.now();
@@ -343,7 +376,9 @@ export class JavaBoxAdapter {
         const rawStderr = this.currentStderr.join("\n");
 
         if (timedOut) {
-          this.currentStderr.push(`\n[Execution timed out after ${timeoutMs / 1000} seconds]`);
+          this.currentStderr.push(
+            `\n[Execution timed out after ${timeoutMs / 1000} seconds]`,
+          );
         }
 
         const combinedOutput = rawStdout + "\n" + rawStderr;
