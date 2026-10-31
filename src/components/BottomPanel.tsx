@@ -61,11 +61,19 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
     document.body.style.cursor = "row-resize";
   }, [panelHeight]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length > 0) {
+      isDraggingRef.current = true;
+      startYRef.current = e.touches[0].clientY;
+      startHeightRef.current = panelHeight;
+    }
+  }, [panelHeight]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current) return;
       const delta = startYRef.current - e.clientY;
-      const newHeight = Math.max(140, Math.min(window.innerHeight - 150, startHeightRef.current + delta));
+      const newHeight = Math.max(120, Math.min(window.innerHeight - 120, startHeightRef.current + delta));
       setPanelHeight(newHeight);
     };
 
@@ -76,11 +84,28 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
       }
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDraggingRef.current || e.touches.length === 0) return;
+      const delta = startYRef.current - e.touches[0].clientY;
+      const newHeight = Math.max(120, Math.min(window.innerHeight - 120, startHeightRef.current + delta));
+      setPanelHeight(newHeight);
+    };
+
+    const handleTouchEnd = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+      }
+    };
+
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
     };
   }, []);
 
@@ -92,22 +117,23 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
       {/* Resizer Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className="w-full h-2 absolute -top-1 left-0 cursor-row-resize z-30 group flex items-center justify-center"
+        onTouchStart={handleTouchStart}
+        className="w-full h-3 absolute -top-1.5 left-0 cursor-row-resize z-30 group flex items-center justify-center touch-none"
         title="Drag to resize bottom panel"
       >
-        <div className="w-10 h-1 rounded-full bg-border group-hover:bg-accent group-hover:scale-y-125 transition-all" />
+        <div className="w-12 h-1 rounded-full bg-border group-hover:bg-accent group-hover:scale-y-125 transition-all" />
       </div>
 
       {/* Panel Tab Header */}
-      <div className="h-9 border-b border-border px-3 flex items-center justify-between bg-surface-muted/40 shrink-0">
-        <div className="flex items-center gap-1.5">
+      <div className="h-9 border-b border-border px-2 sm:px-3 flex items-center justify-between bg-surface-muted shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Output Tab */}
           <button
             onClick={() => setActiveTab("output")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded text-xs font-medium transition-all ${
               activeTab === "output"
                 ? "bg-surface text-text-primary shadow-xs border border-border"
-                : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface"
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
@@ -124,10 +150,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           {/* Input Tab */}
           <button
             onClick={() => setActiveTab("input")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded text-xs font-medium transition-all ${
               activeTab === "input"
                 ? "bg-surface text-text-primary shadow-xs border border-border"
-                : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface"
             }`}
           >
             <Keyboard className="w-3.5 h-3.5" />
@@ -140,10 +166,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           {/* Diagnostics Tab */}
           <button
             onClick={() => setActiveTab("diagnostics")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded text-xs font-medium transition-all ${
               activeTab === "diagnostics"
                 ? "bg-surface text-text-primary shadow-xs border border-border"
-                : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
+                : "text-text-secondary hover:text-text-primary hover:bg-surface"
             }`}
           >
             <AlertCircle className="w-3.5 h-3.5" />

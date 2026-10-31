@@ -61,7 +61,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const badge = getStatusBadge();
 
   return (
-    <footer className="h-6 bg-surface-muted border-t border-border px-3 flex items-center justify-between text-[11px] font-mono text-text-secondary select-none shrink-0 z-20">
+    <footer className="h-6 bg-surface-muted border-t border-border px-2 sm:px-3 flex items-center justify-between text-[11px] font-mono text-text-secondary select-none shrink-0 z-20">
       {/* Left: Java 21 & JVM Status */}
       <div className="flex items-center gap-3">
         <span className="font-semibold text-text-primary">Java 21</span>
